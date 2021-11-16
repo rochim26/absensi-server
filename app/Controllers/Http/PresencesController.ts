@@ -7,6 +7,7 @@ import {
   tanggalBulanTahun,
   tanggalBulanTahunJamMenitDetik,
 } from "App/Utils/utils";
+import axios from "axios";
 
 export default class PresencesController {
   public async index({ request, response }: HttpContextContract) {
@@ -32,7 +33,7 @@ export default class PresencesController {
     }
   }
 
-  public async groupDate({ request, response }: HttpContextContract) {
+  public async groupDate({ response }: HttpContextContract) {
     try {
       const presence = await Database.rawQuery(
         "select distinct(check_in) from presences"
@@ -79,6 +80,12 @@ export default class PresencesController {
 
       const camera = await Cameras.query().where("id", camera_id).first();
 
+      if (!camera) {
+        return response.notFound({
+          message: "Data tidak ditemukan",
+        });
+      }
+
       if (check) {
         if (check_in > camera.check_out) {
           await Presence.query().where("display_name", display_name).update({
@@ -106,6 +113,21 @@ export default class PresencesController {
           check_in: check_in,
           camera_id,
         });
+
+        try {
+          await axios.post(`https://whatsapp.smarteschool.net/send-message`, {
+            number: `${display_name.split("-")[0]}@c.us`,
+            message: `${
+              display_name.split("-")[1]
+            } sudah hadir di sekolah pukul ${check_in} dengan suhu tubuh ${Math.abs(
+              temperature_in
+            )}℃ dan dalam keadaan ${
+              mask_in ? "menggunakan masker" : "tidak menggunakan masker"
+            }`,
+          });
+        } catch (err) {
+          console.log(err.response.data);
+        }
       }
 
       return response.ok({
