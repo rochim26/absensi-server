@@ -26,4 +26,5 @@ Route.get("/", async () => {
 
 Route.resource("camera", "CamerasController").apiOnly();
 Route.get("presence/group-date", "PresencesController.groupDate");
+Route.post("presence/download", "PresencesController.downloadAbsensiFaceRecog");
 Route.resource("presence", "PresencesController").apiOnly();
